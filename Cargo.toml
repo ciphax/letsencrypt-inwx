@@ -1,0 +1,11 @@
+[package]
+name = "letsencrypt-inwx"
+version = "1.0.0"
+authors = ["Matthias Herzog <gh@f8t.eu>"]
+
+[dependencies]
+sxd-xpath = "0.4.1"
+sxd-document = "0.2.6"
+reqwest = "0.8.5"
+cookie = "0.10.1"
+clap = "2.31.1"
