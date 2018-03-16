@@ -1,5 +1,5 @@
 use reqwest::header::Cookie;
-use sxd_xpath::{evaluate_xpath};
+use sxd_xpath::{evaluate_xpath, Value};
 use super::rpc::{RpcRequest, RpcResponse, RpcRequestParameter, RpcRequestParameterValue};
 use std::fmt;
 
@@ -75,7 +75,44 @@ impl Inwx {
         })
     }
 
-    pub fn create_txt_record(&self, name: &str, content: &str, domain: &str) -> Result<(), InwxError> {
+    fn split_domain(&self, domain: &str) -> Result<(String, String), InwxError> {
+        let mut request = RpcRequest::new("nameserver.list", &[
+            RpcRequestParameter {
+                name: "pagelimit",
+                value: RpcRequestParameterValue::Int(1000)
+            }
+        ]);
+        request.set_cookie(self.cookie.clone());
+
+        let response = Inwx::send_request(request)?;
+
+        if let Ok(Value::Nodeset(ref nodes)) = evaluate_xpath(&response.get_document(), "/methodResponse/params/param/value/struct/member[name/text()=\"resData\"]/value/struct/member[name/text()=\"domains\"]/value/array/data/value/struct/member[name/text()=\"domain\"]/value/string/text()") {
+            for node in nodes {
+                if let Some(ref text) = node.text() {
+                    let domain_root = text.text();
+
+                    if domain.ends_with(domain_root) {
+                        let mut name = &domain[0..domain.len() - domain_root.len()];
+
+                        if name.ends_with(".") {
+                            name = &name[0..name.len() - 1];
+                        }
+
+                        return Ok((domain_root.to_owned(), name.to_owned()));
+                    }
+                }
+            }
+        }
+        
+        Err(InwxError::ApiError {
+            method: "nameserver.list".to_owned(),
+            msg: "Domain not found".to_owned()
+        })
+    }
+
+    pub fn create_txt_record(&self, domain: &str, content: &str) -> Result<(), InwxError> {
+        let (domain, name) = self.split_domain(domain)?;
+        
         let mut request = RpcRequest::new("nameserver.createRecord", &[
             RpcRequestParameter {
                 name: "type",
@@ -83,7 +120,7 @@ impl Inwx {
             },
             RpcRequestParameter {
                 name: "name",
-                value: RpcRequestParameterValue::String(name.to_owned())
+                value: RpcRequestParameterValue::String(name)
             },
             RpcRequestParameter {
                 name: "content",
@@ -91,7 +128,7 @@ impl Inwx {
             },
             RpcRequestParameter {
                 name: "domain",
-                value: RpcRequestParameterValue::String(domain.to_owned())
+                value: RpcRequestParameterValue::String(domain)
             },
             RpcRequestParameter {
                 name: "ttl",
@@ -105,7 +142,9 @@ impl Inwx {
         Ok(())
     }
 
-    pub fn get_record_id(&self, name: &str, domain: &str) -> Result<i32, InwxError> {
+    pub fn get_record_id(&self, domain: &str) -> Result<i32, InwxError> {
+        let (domain, name) = self.split_domain(domain)?;
+        
         let mut request = RpcRequest::new("nameserver.info", &[
             RpcRequestParameter {
                 name: "type",
@@ -135,8 +174,8 @@ impl Inwx {
         })
     }
 
-    pub fn delete_txt_record(&self, name: &str, domain: &str) -> Result<(), InwxError> {
-        let id = self.get_record_id(name, domain)?;
+    pub fn delete_txt_record(&self, domain: &str) -> Result<(), InwxError> {
+        let id = self.get_record_id(domain)?;
 
         let mut request = RpcRequest::new("nameserver.deleteRecord", &[
             RpcRequestParameter {

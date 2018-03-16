@@ -51,14 +51,7 @@ fn run() -> Result<(), String> {
             .arg(Arg::with_name("domain")
                 .short("d")
                 .value_name("DOMAIN")
-                .help("the domain the record is created for")
-                .takes_value(true)
-                .required(true)
-            )
-            .arg(Arg::with_name("name")
-                .short("n")
-                .value_name("NAME")
-                .help("the name of the record")
+                .help("the domain of the record (i.e. \"_acme-challenge.example.com\"")
                 .takes_value(true)
                 .required(true)
             )
@@ -82,14 +75,7 @@ fn run() -> Result<(), String> {
             .arg(Arg::with_name("domain")
                 .short("d")
                 .value_name("DOMAIN")
-                .help("the domain of the record")
-                .takes_value(true)
-                .required(true)
-            )
-            .arg(Arg::with_name("name")
-                .short("n")
-                .value_name("NAME")
-                .help("the name of the record")
+                .help("the domain of the record (i.e. \"_acme-challenge.example.com\"")
                 .takes_value(true)
                 .required(true)
             )
@@ -98,23 +84,21 @@ fn run() -> Result<(), String> {
 
     if let Some(matches) = matches.subcommand_matches("create") {
         let domain = matches.value_of("domain").unwrap();
-        let name = matches.value_of("name").unwrap();
         let value = matches.value_of("value").unwrap();
         let (user, pass) = read_credentials(matches.value_of("credentialfile").unwrap())?;
 
         execute_api_commands(&user, &pass, |api| {
-            api.create_txt_record(&name, &value, &domain)?;
+            api.create_txt_record(&domain, &value)?;
             Ok(())
         })?;
 
         println!("Record has been created successfully.");
     } else if let Some(matches) = matches.subcommand_matches("delete") {
         let domain = matches.value_of("domain").unwrap();
-        let name = matches.value_of("name").unwrap();
         let (user, pass) = read_credentials(matches.value_of("credentialfile").unwrap())?;
 
         execute_api_commands(&user, &pass, |api| {
-            api.delete_txt_record(&name, &domain)?;
+            api.delete_txt_record(&domain)?;
             Ok(())
         })?;
 
