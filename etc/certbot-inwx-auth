@@ -1,0 +1,3 @@
+#!/bin/sh
+
+/usr/bin/letsencrypt-inwx create -c /etc/letsencrypt-inwx-cred -d "_acme-challenge.$CERTBOT_DOMAIN" -v "$CERTBOT_VALIDATION"
