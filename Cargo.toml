@@ -1,7 +1,19 @@
 [package]
 name = "letsencrypt-inwx"
 version = "1.0.0"
+description = "A small cli utility for automating the letsencrypt dns-01 challenge for domains hosted by inwx"
 authors = ["Matthias Herzog <gh@f8t.eu>"]
+readme = "README.md"
+license = "MIT"
+
+[package.metadata.deb]
+depends = "$auto"
+extended-description = "A small cli utility for automating the letsencrypt dns-01 challenge for domains hosted by inwx. The dns-01 challenge is required for obtaining wildcard certificates from letsencrypt."
+assets = [
+    ["target/release/letsencrypt-inwx", "usr/bin/", "755"],
+    ["etc/certbot-inwx-auth", "usr/lib/letsencrypt-inwx/", "755"],
+    ["etc/certbot-inwx-cleanup", "usr/lib/letsencrypt-inwx/", "755"]
+]
 
 [dependencies]
 sxd-xpath = "0.4.1"

@@ -91,14 +91,12 @@ impl Inwx {
                 if let Some(ref text) = node.text() {
                     let domain_root = text.text();
 
-                    if domain.ends_with(domain_root) {
-                        let mut name = &domain[0..domain.len() - domain_root.len()];
-
-                        if name.ends_with(".") {
-                            name = &name[0..name.len() - 1];
-                        }
+                    if domain.ends_with(&format!(".{}", domain_root)) {
+                        let mut name = &domain[0..domain.len() - domain_root.len() - 1];
 
                         return Ok((domain_root.to_owned(), name.to_owned()));
+                    } else if domain == domain_root {
+                        return Ok((domain_root.to_owned(), "".to_owned()));
                     }
                 }
             }
