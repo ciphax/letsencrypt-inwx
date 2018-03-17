@@ -1,9 +1,9 @@
-# letsencrypt-inwx
+# letsencrypt-inwx [![Build Status](https://travis-ci.org/kegato/letsencrypt-inwx.svg?branch=master)](https://travis-ci.org/kegato/letsencrypt-inwx)
 A small cli utility for automating the letsencrypt dns-01 challenge for domains hosted by inwx. This allows you to obtain wildcard certificates from letsencrypt.
 
 ## Installation
 ### Ubuntu / Debian
-- Build the .deb package or download it from the release page and install it with `sudo dpkg -i <path_to_the_deb_file>`
+- Build the .deb package or download it from [releases](https://github.com/kegato/letsencrypt-inwx/releases/latest) and install it with `sudo dpkg -i <path_to_the_deb_file>`
 
 ### Other linux
 - Build the executable and copy it to `/usr/bin/`
@@ -15,7 +15,7 @@ A small cli utility for automating the letsencrypt dns-01 challenge for domains 
 - Make sure the file is only readable for root `sudo chmod 600 /etc/letsencrypt-inwx-cred`
 - You can now get certificates from [certbot](https://certbot.eff.org/) by running `sudo certbot certonly -n --agree-tos --email <your_email> --manual --preferred-challenges=dns --manual-auth-hook /usr/lib/letsencrypt-inwx/certbot-inwx-auth --manual-cleanup-hook /usr/lib/letsencrypt-inwx/certbot-inwx-cleanup --manual-public-ip-logging-ok -d <your_domain>`
 
-Note: You need atleast certbot 0.22.0 to issue wildcard certificates
+Note: You need atleast certbot 0.22.0 to issue wildcard certificates.
 
 ### Manually
 - Put your inwx login data seperated by a newline into a file

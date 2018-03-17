@@ -1,0 +1,17 @@
+language: rust
+rust:
+- stable
+cache: cargo
+install:
+- "(cargo deb --help) || cargo install cargo-deb"
+script:
+- cargo deb
+deploy:
+  provider: releases
+  api_key:
+    secure: E/V4603yCiCTF1OjDIJIifBbng91Ax7fVCWU1wxVi0wDbmKpcLBUfbCPTINtVJtQy+bMr56KJ5upsfYV5NZKXvx49y1TJknwkaChtwnoe3GF71N3yjwOS71JH2TkNmGSxWl9e/NQS9Wy1EP2THrFnLhMG/AV05jL9XYzJcVL/3E7ul9kAR6oM6/qQTryuxLQxPIAXq/qz8w5FynMwrBK9QEy6+NEMiOMR1cWjnpw8HIt/0C5O+xu0ZCx/E1I5EYspBDKS9w+fro8rJWgGoMmlFAwnSf/eEd6fvsY5v4j+VBbLZBhOkN4PTZdxPyWq0XXek3QVF+l6qhSWTNa0WfsbZOi7GdAF99iUPTdkVCtxZ28RKvaGKEPq0dk7cqnJ4pa5Ku5kXAgaODKm/UpKEZEm6+PWnSMA+aMcZtZtM+lIdST+IC2bIbNt1l5c3hwZU8WWcXf4CTNREBvJQXYNekWX9MzPg2i5A0tOPKTZXt+OSCAjFG1WWXm+ky1upKR/s74/G8gdCEEe8fRCL9FP1sQKUQ6nXpRqdCtbe+sgGzVtFG3WFlL1MXPbw8vbmOLnGnduuyzCm8ZKm7JHVc+RKhk/S0fV2RHZ3PL0/PRyDQO6JOYU9IwyODUDkrNBSF8JX9m7S7m1j0nerh3KcTwE9F+iXj3iJwXV+1vACkMDHm3lpc=
+  file_glob: true
+  file: target/debian/*.deb
+  skip_cleanup: true
+  on:
+    tags: true
