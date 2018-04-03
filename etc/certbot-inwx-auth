@@ -1,3 +1,4 @@
 #!/bin/sh
 
-/usr/bin/letsencrypt-inwx create -c /etc/letsencrypt-inwx-cred -d "_acme-challenge.$CERTBOT_DOMAIN" -v "$CERTBOT_VALIDATION"
+# Wait 2 minutes after setting the DNS record to have a higher chance that it is publicly available on the internet.
+/usr/bin/letsencrypt-inwx create -c /etc/letsencrypt-inwx-cred -d "_acme-challenge.$CERTBOT_DOMAIN" -v "$CERTBOT_VALIDATION" && sleep 120
