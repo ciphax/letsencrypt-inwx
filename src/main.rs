@@ -5,7 +5,10 @@ use clap::{Arg, App, SubCommand};
 use std::fs::File;
 use std::process::exit;
 use std::io::prelude::*;
+use std::thread::sleep;
+use std::time::{Duration, Instant};
 use letsencrypt_inwx::inwx::{Inwx, InwxError};
+use letsencrypt_inwx::dns::check_txt_record;
 
 fn read_file(path: &str) -> std::io::Result<String> {
     let mut file = File::open(path)?;
@@ -62,6 +65,10 @@ fn run() -> Result<(), String> {
                 .takes_value(true)
                 .required(true)
             )
+            .arg(Arg::with_name("nodnscheck")
+                .long("no-dns-check")
+                .help("Don't wait for the dns record to be publicly visible")
+            )
         )
         .subcommand(SubCommand::with_name("delete")
             .about("delete a TXT record")
@@ -87,22 +94,50 @@ fn run() -> Result<(), String> {
         let value = matches.value_of("value").unwrap();
         let (user, pass) = read_credentials(matches.value_of("credentialfile").unwrap())?;
 
+        println!("Creating TXT record...");
+
         execute_api_commands(&user, &pass, |api| {
             api.create_txt_record(&domain, &value)?;
             Ok(())
         })?;
 
-        println!("Record has been created successfully.");
+        println!("=> done!");
+
+        if !matches.is_present("nodnscheck") {
+            println!("Waiting for the dns record to be publicly visible...");
+
+            let start = Instant::now();
+            let mut wait_secs = 5;
+
+            loop {
+                // timeout after 10 minutes
+                if start.elapsed() > Duration::from_secs(60 * 10) {
+                    return Err("timeout!".to_owned());
+                }
+
+                if check_txt_record(domain, value) {
+                    break;
+                }
+
+                wait_secs *= 2;
+
+                sleep(Duration::from_secs(wait_secs));
+            }
+
+            println!("=> done!");
+        }
     } else if let Some(matches) = matches.subcommand_matches("delete") {
         let domain = matches.value_of("domain").unwrap();
         let (user, pass) = read_credentials(matches.value_of("credentialfile").unwrap())?;
+
+        println!("Deleting TXT record...");
 
         execute_api_commands(&user, &pass, |api| {
             api.delete_txt_record(&domain)?;
             Ok(())
         })?;
 
-        println!("Record has been deleted successfully.");
+        println!("=> done!");
     } else {
         app.print_help().unwrap();
         std::process::exit(1);
@@ -136,7 +171,7 @@ fn execute_api_commands<F>(user: &str, pass: &str, op: F) -> Result<(), String> 
 
 fn main() {
     if let Err(msg) = run() {
-        eprintln!("Error: {}", msg);
+        eprintln!("=> Error: {}", msg);
         exit(1);
     }
 }

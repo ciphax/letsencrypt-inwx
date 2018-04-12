@@ -1,7 +1,7 @@
+use std::fmt;
 use reqwest::header::Cookie;
 use sxd_xpath::{evaluate_xpath, Value};
 use super::rpc::{RpcRequest, RpcResponse, RpcRequestParameter, RpcRequestParameterValue};
-use std::fmt;
 
 const API_URL: &str = "https://api.domrobot.com/xmlrpc/";
 
