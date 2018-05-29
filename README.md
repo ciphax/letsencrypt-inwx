@@ -22,6 +22,12 @@ Note: You need atleast certbot 0.22.0 to issue wildcard certificates.
 - Create a txt record with `letsencrypt-inwx create -c <credential_file> -d _acme-challenge.your-domain.com -v <acme_token>`
 - Delete it with `letsencrypt-inwx delete -c <credential_file> -d _acme-challenge.your-domain.com`
 
+### With Docker (supports wildcard certificates)
+- Put your inwx login data into the `docker-compose.yml` file
+- Also configure there your email and a local folder for persistance
+- The domains you want to authorize go there too
+- finally run `docker-compose up` (this can take a while)
+
 ## Building
 ### Requirements
 `openssl-devel` and `pkg-config` are required when building on Ubuntu / Debian see [here](https://github.com/sfackler/rust-openssl).
