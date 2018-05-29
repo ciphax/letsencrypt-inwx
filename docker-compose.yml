@@ -1,0 +1,12 @@
+version: "3"
+
+services:
+  certbot:
+    build: .
+    volumes:
+      - /your/persistant/folder/for/letsencrypt:/etc/letsencrypt
+    environment:
+      - INWX_USER=username
+      - INWX_PASSWD=password
+      - CERT_EMAIL=your-email@gmail.com
+      - DOMAINS=your-domain.com,*.your-domain.com
