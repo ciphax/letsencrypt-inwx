@@ -1,13 +1,13 @@
 use std::fmt;
 use reqwest::header::Cookie;
 use sxd_xpath::{evaluate_xpath, Value};
-use super::rpc::{RpcRequest, RpcResponse, RpcRequestParameter, RpcRequestParameterValue};
+use super::rpc::{RpcRequest, RpcResponse, RpcRequestParameter, RpcRequestParameterValue, RpcError};
 
 const API_URL: &str = "https://api.domrobot.com/xmlrpc/";
 
 #[derive(Debug)]
 pub enum InwxError {
-    ConnectError,
+    RpcError(RpcError),
     ApiError {
         method: String,
         msg: String
@@ -17,7 +17,7 @@ pub enum InwxError {
 impl fmt::Display for InwxError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
-            &InwxError::ConnectError => write!(f, "Could not connect to the inwx api"),
+            &InwxError::RpcError(ref e) => write!(f, "The inwx api call failed: {}", e),
             &InwxError::ApiError { ref method, ref msg } => write!(f, "{}: {}", method, msg)
         }
     }
@@ -31,22 +31,20 @@ impl Inwx {
     fn send_request(request: RpcRequest) -> Result<RpcResponse, InwxError> {
         let method = request.get_method();
 
-        if let Some(response) = request.send(API_URL) {
-            if response.is_success() {
-                Ok(response)
-            } else {
-                let msg = match evaluate_xpath(&response.get_document(), "/methodResponse/params/param/value/struct/member[name/text()=\"msg\"]/value/string/text()") {
-                    Ok(ref value) => value.string(),
-                    Err(_) => String::new()
-                };
+        let response = request.send(API_URL).map_err(|e| InwxError::RpcError(e))?;
 
-                Err(InwxError::ApiError {
-                    msg,
-                    method
-                })
-            }
+        if response.is_success() {
+            Ok(response)
         } else {
-            Err(InwxError::ConnectError)
+            let msg = match evaluate_xpath(&response.get_document(), "/methodResponse/params/param/value/struct/member[name/text()=\"msg\"]/value/string/text()") {
+                Ok(ref value) => value.string(),
+                Err(_) => String::new()
+            };
+
+            Err(InwxError::ApiError {
+                msg,
+                method
+            })
         }
     }
 

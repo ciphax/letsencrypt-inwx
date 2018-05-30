@@ -1,3 +1,5 @@
+use std::fmt;
+use reqwest;
 use reqwest::{Client, Response, StatusCode};
 use reqwest::header::{Cookie, SetCookie};
 use sxd_document::writer::format_document;
@@ -5,6 +7,21 @@ use sxd_document::{parser, Package};
 use sxd_document::dom::Document;
 use sxd_xpath::evaluate_xpath;
 use cookie;
+
+#[derive(Debug)]
+pub enum RpcError {
+    ConnectionError(reqwest::Error),
+    InvalidResponse
+}
+
+impl fmt::Display for RpcError {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self {
+            &RpcError::InvalidResponse => write!(f, "The inwx api did not return a valid response"),
+            &RpcError::ConnectionError(ref e) => write!(f, "Could not connect to the inwx api: {}", e)
+        }
+    }
+}
 
 pub struct RpcRequestParameter {
     pub name: &'static str,
@@ -86,7 +103,7 @@ impl RpcRequest {
         self.method.clone()
     }
 
-    pub fn send(self, url: &str) -> Option<RpcResponse> {
+    pub fn send(self, url: &str) -> Result<RpcResponse, RpcError> {
         let client = Client::new();
 
         let mut request = client.post(url);
@@ -96,10 +113,9 @@ impl RpcRequest {
             request.header(cookie);
         }
 
-        match request.send() {
-            Ok(response) => RpcResponse::new(response),
-            Err(_) => None,
-        }
+        request.send()
+            .map_err(|e| RpcError::ConnectionError(e))
+            .and_then(|response| RpcResponse::new(response).ok_or(RpcError::InvalidResponse))
     }
 }
 
