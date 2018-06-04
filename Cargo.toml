@@ -5,6 +5,7 @@ description = "A small cli utility for automating the letsencrypt dns-01 challen
 authors = ["Matthias Herzog <gh@f8t.eu>"]
 readme = "README.md"
 license = "MIT"
+repository = "https://github.com/kegato/letsencrypt-inwx"
 
 [package.metadata.deb]
 depends = "$auto"
