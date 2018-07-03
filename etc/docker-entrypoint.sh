@@ -14,7 +14,11 @@ if [ $hasErrors = true ]; then
 	exit 1;
 fi
 
-printf "$INWX_USER\n$INWX_PASSWD" > /etc/letsencrypt-inwx-cred
+cat << EOF > /etc/letsencrypt-inwx-cred
+$INWX_USER
+$INWX_PASSWD
+EOF
+
 chmod 600 /etc/letsencrypt-inwx-cred
 
 set -x
