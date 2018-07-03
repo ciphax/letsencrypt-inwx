@@ -3,7 +3,7 @@ services:
   - docker
 script:
   - mkdir deploy
-  - docker build -t letsencrypt-inwx-builder .
+  - docker build --target builder -t letsencrypt-inwx-builder .
   - docker create --name letsencrypt-inwx-builder-container letsencrypt-inwx-builder
   - docker cp letsencrypt-inwx-builder-container:/home/rust/src/target/x86_64-unknown-linux-musl/release/letsencrypt-inwx deploy/
   - docker cp letsencrypt-inwx-builder-container:/home/rust/src/target/x86_64-unknown-linux-musl/debian deploy/

@@ -6,16 +6,26 @@ A small cli utility for automating the letsencrypt dns-01 challenge for domains 
 - Build the .deb package or download it from [releases](https://github.com/kegato/letsencrypt-inwx/releases/latest) and install it with `sudo dpkg -i <path_to_the_deb_file>`
 
 ### Other linux
-- Build the executable and copy it to `/usr/bin/`
+- Build the executable or download it from [releases](https://github.com/kegato/letsencrypt-inwx/releases/latest) and copy it to `/usr/bin/`
 - Copy both certbot scripts from `./etc/` to `/usr/lib/letsencrypt-inwx/`
 
 ## Usage
 ### With certbot
 - Put your inwx login data seperated by a newline into `/etc/letsencrypt-inwx-cred`
 - Make sure the file is only readable for root `sudo chmod 600 /etc/letsencrypt-inwx-cred`
-- You can now get certificates from [certbot](https://certbot.eff.org/) by running `sudo certbot certonly -n --agree-tos --email <your_email> --manual --preferred-challenges=dns --manual-auth-hook /usr/lib/letsencrypt-inwx/certbot-inwx-auth --manual-cleanup-hook /usr/lib/letsencrypt-inwx/certbot-inwx-cleanup --manual-public-ip-logging-ok -d <your_domain>`
+- You can now get certificates from [certbot](https://certbot.eff.org/) by running `sudo certbot certonly -n --agree-tos --email <your_email> --server https://acme-v02.api.letsencrypt.org/directory --preferred-challenges=dns-01 --manual --manual-auth-hook /usr/lib/letsencrypt-inwx/certbot-inwx-auth --manual-cleanup-hook /usr/lib/letsencrypt-inwx/certbot-inwx-cleanup --manual-public-ip-logging-ok -d <your_domain>`
 
 Note: You need atleast certbot 0.22.0 to issue wildcard certificates.
+
+### With Docker and certbot
+- Put your inwx login data into a docker env file like this
+```sh
+INWX_USER=username
+INWX_PASSWD=password
+```
+- Generate your certificate by running `docker run --rm -it --env-file <your-env-file> -v /etc/letsencrypt:/etc/letsencrypt kegato/letsencrypt-inwx certonly --email <your_email> --preferred-challenges=dns-01 --manual --manual-auth-hook /usr/lib/letsencrypt-inwx/certbot-inwx-auth --manual-cleanup-hook /usr/lib/letsencrypt-inwx/certbot-inwx-cleanup --manual-public-ip-logging-ok -d <your_domain>`
+- Your certificate is now at `/etc/letsencrypt/live/<your_domain>/`
+- You can renew your certificate by running `docker run --rm -it --env-file <your-env-file> -v /etc/letsencrypt:/etc/letsencrypt kegato/letsencrypt-inwx renew`
 
 ### Manually
 - Put your inwx login data seperated by a newline into a file
@@ -24,10 +34,11 @@ Note: You need atleast certbot 0.22.0 to issue wildcard certificates.
 
 ## Building
 ### Requirements
-`openssl-devel` and `pkg-config` are required when building on Ubuntu / Debian see [here](https://github.com/sfackler/rust-openssl).
+`libssl-dev` and `pkg-config` are required when building on Ubuntu / Debian see [here](https://github.com/sfackler/rust-openssl).
 
 ### .deb package
 - Install [cargo-deb](https://github.com/mmstick/cargo-deb) by running `cargo install cargo-deb`
 - Run `cargo deb` to build the package
+
 ### only the executable
 - Run `cargo build --release` to build the `letsencrypt-inwx` executable
