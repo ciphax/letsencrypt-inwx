@@ -1,4 +1,5 @@
-# letsencrypt-inwx [![Build Status](https://travis-ci.org/kegato/letsencrypt-inwx.svg?branch=master)](https://travis-ci.org/kegato/letsencrypt-inwx)
+# letsencrypt-inwx [![Build Status](https://travis-ci.org/kegato/letsencrypt-inwx.svg?branch=master)](https://travis-ci.org/kegato/letsencrypt-inwx) [![Docker Build Status](https://img.shields.io/docker/build/kegato/letsencrypt-inwx.svg)](https://hub.docker.com/r/kegato/letsencrypt-inwx/) [![Crates.io](https://img.shields.io/crates/v/letsencrypt-inwx.svg)](https://crates.io/crates/letsencrypt-inwx)
+
 A small cli utility for automating the letsencrypt dns-01 challenge for domains hosted by inwx. This allows you to obtain wildcard certificates from letsencrypt.
 
 ## Installation
@@ -8,6 +9,9 @@ A small cli utility for automating the letsencrypt dns-01 challenge for domains 
 ### Other linux
 - Build the executable or download it from [releases](https://github.com/kegato/letsencrypt-inwx/releases/latest) and copy it to `/usr/bin/`
 - Copy both certbot scripts from `./etc/` to `/usr/lib/letsencrypt-inwx/`
+
+### With cargo
+- Run `cargo install letsencrypt-inwx`
 
 ## Usage
 ### With certbot
