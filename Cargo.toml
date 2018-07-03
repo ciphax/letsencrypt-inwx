@@ -8,7 +8,7 @@ license = "MIT"
 repository = "https://github.com/kegato/letsencrypt-inwx"
 
 [package.metadata.deb]
-depends = "$auto"
+depends = ""
 extended-description = "A small cli utility for automating the letsencrypt dns-01 challenge for domains hosted by inwx. The dns-01 challenge is required for obtaining wildcard certificates from letsencrypt."
 assets = [
     ["target/release/letsencrypt-inwx", "usr/bin/", "755"],
@@ -17,9 +17,10 @@ assets = [
 ]
 
 [dependencies]
-sxd-xpath = "0.4.1"
-sxd-document = "0.2.6"
-reqwest = "0.8.5"
-cookie = "0.10.1"
-clap = "2.31.1"
-trust-dns-resolver = "0.8"
+sxd-xpath = "^0.4.1"
+sxd-document = "^0.2.6"
+reqwest = "^0.8.6"
+cookie = "^0.10.1"
+trust-dns-resolver = "^0.9.0"
+clap = "^2.32.0"
+openssl-probe = "^0.1.2"

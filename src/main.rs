@@ -1,4 +1,5 @@
 extern crate clap;
+extern crate openssl_probe;
 extern crate letsencrypt_inwx;
 
 use clap::{Arg, App, SubCommand};
@@ -170,6 +171,8 @@ fn execute_api_commands<F>(user: &str, pass: &str, op: F) -> Result<(), String> 
 }
 
 fn main() {
+    openssl_probe::init_ssl_cert_env_vars();
+
     if let Err(msg) = run() {
         eprintln!("=> Error: {}", msg);
         exit(1);
