@@ -2,15 +2,14 @@ sudo: required
 services:
   - docker
 script:
-  - mkdir deploy
   - docker build --target builder -t letsencrypt-inwx-builder .
+before_deploy:
+  - mkdir deploy
   - docker create --name letsencrypt-inwx-builder-container letsencrypt-inwx-builder
   - docker cp letsencrypt-inwx-builder-container:/home/rust/src/target/x86_64-unknown-linux-musl/release/letsencrypt-inwx deploy/
   - docker cp letsencrypt-inwx-builder-container:/home/rust/src/target/x86_64-unknown-linux-musl/debian deploy/
   - mv deploy/debian/*.deb deploy/
   - rm -rf deploy/debian
-  - docker rm letsencrypt-inwx-builder-container
-  - docker rmi letsencrypt-inwx-builder
 deploy:
   provider: releases
   api_key:
