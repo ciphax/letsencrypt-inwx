@@ -1,3 +1,9 @@
 #!/bin/sh
 
-/usr/bin/letsencrypt-inwx delete -c /etc/letsencrypt-inwx-cred -d "_acme-challenge.$CERTBOT_DOMAIN"
+CRED_PATH=/etc/letsencrypt-inwx-cred
+
+if [ -f ~/.config/letsencrypt-inwx-cred ]; then
+	CRED_PATH=~/.config/letsencrypt-inwx-cred
+fi
+
+/usr/bin/letsencrypt-inwx delete -c $CRED_PATH -d "_acme-challenge.$CERTBOT_DOMAIN"
