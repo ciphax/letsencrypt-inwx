@@ -41,7 +41,7 @@ fn read_credentials(path: &str) -> Result<(String, String), &'static str> {
 
 fn run() -> Result<(), String> {
 	let mut app = App::new("letsencrypt-inwx")
-		.version("1.0.3")
+		.version("1.0.4")
 		.about("A small cli utility for automating the letsencrypt dns-01 challenge for domains hosted by inwx")
 		.subcommand(SubCommand::with_name("create")
 			.about("create a TXT record")
