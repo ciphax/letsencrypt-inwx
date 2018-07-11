@@ -20,7 +20,7 @@ A small cli utility for automating the letsencrypt dns-01 challenge for domains 
 - You can now get certificates from [certbot](https://certbot.eff.org/) by running `sudo certbot certonly -n --agree-tos --email <your_email> --server https://acme-v02.api.letsencrypt.org/directory --preferred-challenges=dns-01 --manual --manual-auth-hook /usr/lib/letsencrypt-inwx/certbot-inwx-auth --manual-cleanup-hook /usr/lib/letsencrypt-inwx/certbot-inwx-cleanup --manual-public-ip-logging-ok -d <your_domain>`
 
 #### Notes
-- You need atleast certbot 0.22.0 to issue wildcard certificates.
+- You need at least certbot 0.22.0 to issue wildcard certificates.
 - You can put your inwx login data into `~/.config/letsencrypt-inwx-cred` if you want to run certbot as non-root user
 
 ### With Docker and certbot
