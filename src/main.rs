@@ -9,7 +9,7 @@ use std::io::prelude::*;
 use std::thread::sleep;
 use std::time::{Duration, Instant};
 use letsencrypt_inwx::inwx::{Inwx, InwxError};
-use letsencrypt_inwx::dns::check_txt_record;
+use letsencrypt_inwx::dns::{check_txt_record, lookup_real_domain};
 
 fn read_file(path: &str) -> std::io::Result<String> {
 	let mut file = File::open(path)?;
@@ -91,7 +91,7 @@ fn run() -> Result<(), String> {
 	let matches = app.clone().get_matches();
 
 	if let Some(matches) = matches.subcommand_matches("create") {
-		let domain = matches.value_of("domain").unwrap();
+		let domain = lookup_real_domain(matches.value_of("domain").unwrap());
 		let value = matches.value_of("value").unwrap();
 		let (user, pass) = read_credentials(matches.value_of("credentialfile").unwrap())?;
 
@@ -116,7 +116,7 @@ fn run() -> Result<(), String> {
 					return Err("timeout!".to_owned());
 				}
 
-				if check_txt_record(domain, value) {
+				if check_txt_record(&domain, value) {
 					break;
 				}
 
@@ -128,7 +128,7 @@ fn run() -> Result<(), String> {
 			println!("=> done!");
 		}
 	} else if let Some(matches) = matches.subcommand_matches("delete") {
-		let domain = matches.value_of("domain").unwrap();
+		let domain = lookup_real_domain(matches.value_of("domain").unwrap());
 		let (user, pass) = read_credentials(matches.value_of("credentialfile").unwrap())?;
 
 		println!("Deleting TXT record...");

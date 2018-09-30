@@ -22,6 +22,7 @@ A small cli utility for automating the letsencrypt dns-01 challenge for domains 
 #### Notes
 - You need at least certbot 0.22.0 to issue wildcard certificates.
 - You can put your inwx login data into `~/.config/letsencrypt-inwx-cred` if you want to run certbot as non-root user
+- This tool uses the google dns server 8.8.8.8 to check the supplied domain for CNAMEs and to verify that the dns change is publicly visible
 
 ### With Docker and certbot
 - Put your inwx login data into a docker env file like this
