@@ -68,7 +68,14 @@ fn run() -> Result<(), String> {
 			)
 			.arg(Arg::with_name("nodnscheck")
 				.long("no-dns-check")
-				.help("Don't wait for the dns record to be publicly visible")
+				.help("don't wait for the dns record to be publicly visible")
+			)
+			.arg(Arg::with_name("waitinterval")
+				.long("wait-interval")
+				.value_name("SECONDS")
+				.help("the amount of seconds to wait after creating a record")
+				.takes_value(true)
+				.default_value("5")
 			)
 		)
 		.subcommand(SubCommand::with_name("delete")
@@ -94,6 +101,7 @@ fn run() -> Result<(), String> {
 		let domain = lookup_real_domain(matches.value_of("domain").unwrap());
 		let value = matches.value_of("value").unwrap();
 		let (user, pass) = read_credentials(matches.value_of("credentialfile").unwrap())?;
+		let wait_interval = matches.value_of("waitinterval").unwrap().parse().map_err(|_| "Invalid wait interval!")?;
 
 		println!("Creating TXT record...");
 
@@ -124,6 +132,14 @@ fn run() -> Result<(), String> {
 
 				sleep(Duration::from_secs(wait_secs));
 			}
+
+			println!("=> done!");
+		}
+
+		if wait_interval > 0 {
+			println!("Waiting {} additional seconds...", &wait_interval);
+
+			sleep(Duration::from_secs(wait_interval));
 
 			println!("=> done!");
 		}
