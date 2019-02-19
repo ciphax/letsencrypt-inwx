@@ -89,31 +89,59 @@ impl Inwx {
 	}
 
 	fn split_domain(&mut self, domain: &str) -> Result<(String, String), InwxError> {
-		let request = RpcRequest::new("nameserver.list", &[]);
+		let page_size = 20;
+		let mut page = 1;
 
-		let response = self.send_request(request)?;
-
-		if let Ok(Value::Nodeset(ref nodes)) = evaluate_xpath(&response.get_document(), "/methodResponse/params/param/value/struct/member[name/text()=\"resData\"]/value/struct/member[name/text()=\"domains\"]/value/array/data/value/struct/member[name/text()=\"domain\"]/value/string/text()") {
-			for node in nodes {
-				if let Some(ref text) = node.text() {
-					let domain_root = text.text();
-
-					if domain.ends_with(&format!(".{}", domain_root)) {
-						let mut name = &domain[0..domain.len() - domain_root.len() - 1];
-
-						return Ok((domain_root.to_owned(), name.to_owned()));
-					} else if domain == domain_root {
-						return Ok((domain_root.to_owned(), "".to_owned()));
-					}
-				}
-			}
-		}
-
-		Err(InwxError::ApiError {
+		let dnf_error = || InwxError::ApiError {
 			method: "nameserver.list".to_owned(),
 			msg: "Domain not found".to_owned(),
 			reason: "".to_owned()
-		})
+		};
+
+		loop {
+			let request = RpcRequest::new("nameserver.list", &[
+				RpcRequestParameter {
+					name: "pagelimit",
+					value: RpcRequestParameterValue::Int(page_size)
+				},
+				RpcRequestParameter {
+					name: "page",
+					value: RpcRequestParameterValue::Int(page)
+				}
+			]);
+
+			let response = self.send_request(request)?;
+
+			let total: i32 = evaluate_xpath(
+				&response.get_document(),
+				"/methodResponse/params/param/value/struct/member[name/text()=\"resData\"]/value/struct/member[name/text()=\"count\"]/value/int"
+			)
+				.ok()
+				.and_then(|value| value.string().parse().ok())
+				.ok_or_else(dnf_error)?;
+
+			if let Ok(Value::Nodeset(ref nodes)) = evaluate_xpath(&response.get_document(), "/methodResponse/params/param/value/struct/member[name/text()=\"resData\"]/value/struct/member[name/text()=\"domains\"]/value/array/data/value/struct/member[name/text()=\"domain\"]/value/string/text()") {
+				for node in nodes {
+					if let Some(ref text) = node.text() {
+						let domain_root = text.text();
+
+						if domain.ends_with(&format!(".{}", domain_root)) {
+							let mut name = &domain[0..domain.len() - domain_root.len() - 1];
+
+							return Ok((domain_root.to_owned(), name.to_owned()));
+						} else if domain == domain_root {
+							return Ok((domain_root.to_owned(), "".to_owned()));
+						}
+					}
+				}
+			}
+
+			if total > page * page_size {
+				page += 1;
+			} else {
+				return Err(dnf_error());
+			}
+		}
 	}
 
 	pub fn create_txt_record(&mut self, domain: &str, content: &str) -> Result<(), InwxError> {
