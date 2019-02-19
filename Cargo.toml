@@ -17,13 +17,13 @@ assets = [
 ]
 
 [dependencies]
-sxd-xpath = "*"
-sxd-document = "*"
-reqwest = "*"
-trust-dns = "*"
-clap = "*"
-openssl-probe = "*"
+sxd-xpath = "0.4.2"
+sxd-document = "0.3.0"
+reqwest = "0.9.10"
+trust-dns = "0.15.1"
+clap = "2.32.0"
+openssl-probe = "0.1.2"
 
 [dependencies.cookie]
-version = "*"
+version = "0.11.0"
 features = ["percent-encode"]
