@@ -10,6 +10,7 @@ pub enum InwxError {
 	RpcError(RpcError),
 	ApiError {
 		method: String,
+		reason: String,
 		msg: String
 	}
 }
@@ -18,7 +19,7 @@ impl fmt::Display for InwxError {
 	fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
 		match self {
 			&InwxError::RpcError(ref e) => write!(f, "The inwx api call failed: {}", e),
-			&InwxError::ApiError { ref method, ref msg } => write!(f, "{}: {}", method, msg)
+			&InwxError::ApiError { ref method, ref msg, ref reason } => write!(f, "method={},msg={},reason={}", method, msg, reason)
 		}
 	}
 }
@@ -36,13 +37,25 @@ impl Inwx {
 		if response.is_success() {
 			Ok(response)
 		} else {
-			let msg = match evaluate_xpath(&response.get_document(), "/methodResponse/params/param/value/struct/member[name/text()=\"msg\"]/value/string/text()") {
+			let msg = match evaluate_xpath(
+				&response.get_document(),
+				"/methodResponse/params/param/value/struct/member[name/text()=\"msg\"]/value/string/text()"
+			) {
+				Ok(ref value) => value.string(),
+				Err(_) => String::new()
+			};
+
+			let reason = match evaluate_xpath(
+				&response.get_document(),
+				"/methodResponse/params/param/value/struct/member[name/text()=\"reason\"]/value/string/text()"
+			) {
 				Ok(ref value) => value.string(),
 				Err(_) => String::new()
 			};
 
 			Err(InwxError::ApiError {
 				msg,
+				reason,
 				method
 			})
 		}
@@ -98,7 +111,8 @@ impl Inwx {
 
 		Err(InwxError::ApiError {
 			method: "nameserver.list".to_owned(),
-			msg: "Domain not found".to_owned()
+			msg: "Domain not found".to_owned(),
+			reason: "".to_owned()
 		})
 	}
 
@@ -156,7 +170,8 @@ impl Inwx {
 
 		id.ok_or(InwxError::ApiError {
 			method: "nameserver.info".to_owned(),
-			msg: "Record not found".to_owned()
+			msg: "Record not found".to_owned(),
+			reason: "".to_owned()
 		})
 	}
 
