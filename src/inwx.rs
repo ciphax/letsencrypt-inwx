@@ -1,5 +1,5 @@
 use std::fmt;
-use reqwest::header::Cookie;
+use cookie::CookieJar;
 use sxd_xpath::{evaluate_xpath, Value};
 use super::rpc::{RpcRequest, RpcResponse, RpcRequestParameter, RpcRequestParameterValue, RpcError};
 
@@ -24,14 +24,14 @@ impl fmt::Display for InwxError {
 }
 
 pub struct Inwx {
-	cookie: Cookie
+	cookies: CookieJar
 }
 
 impl Inwx {
-	fn send_request(request: RpcRequest) -> Result<RpcResponse, InwxError> {
+	fn send_request(&mut self, request: RpcRequest) -> Result<RpcResponse, InwxError> {
 		let method = request.get_method();
 
-		let response = request.send(API_URL).map_err(|e| InwxError::RpcError(e))?;
+		let response = request.send(API_URL, &mut self.cookies).map_err(|e| InwxError::RpcError(e))?;
 
 		if response.is_success() {
 			Ok(response)
@@ -48,7 +48,7 @@ impl Inwx {
 		}
 	}
 
-	fn login(user: &str, pass: &str) -> Result<Cookie, InwxError> {
+	fn login(&mut self, user: &str, pass: &str) -> Result<(), InwxError> {
 		let request = RpcRequest::new("account.login", &[
 			RpcRequestParameter {
 				name: "user",
@@ -60,29 +60,25 @@ impl Inwx {
 			}
 		]);
 
-		let response = Inwx::send_request(request)?;
+		self.send_request(request)?;
 
-		Ok(response.get_cookie())
+		Ok(())
 	}
 
 	pub fn new(user: &str, pass: &str) -> Result<Inwx, InwxError> {
-		let cookie = Inwx::login(user, pass)?;
+		let mut api = Inwx {
+			cookies: CookieJar::new()
+		};
 
-		Ok(Inwx {
-			cookie
-		})
+		api.login(user, pass)?;
+
+		Ok(api)
 	}
 
-	fn split_domain(&self, domain: &str) -> Result<(String, String), InwxError> {
-		let mut request = RpcRequest::new("nameserver.list", &[
-			RpcRequestParameter {
-				name: "pagelimit",
-				value: RpcRequestParameterValue::Int(1000)
-			}
-		]);
-		request.set_cookie(self.cookie.clone());
+	fn split_domain(&mut self, domain: &str) -> Result<(String, String), InwxError> {
+		let request = RpcRequest::new("nameserver.list", &[]);
 
-		let response = Inwx::send_request(request)?;
+		let response = self.send_request(request)?;
 
 		if let Ok(Value::Nodeset(ref nodes)) = evaluate_xpath(&response.get_document(), "/methodResponse/params/param/value/struct/member[name/text()=\"resData\"]/value/struct/member[name/text()=\"domains\"]/value/array/data/value/struct/member[name/text()=\"domain\"]/value/string/text()") {
 			for node in nodes {
@@ -106,10 +102,10 @@ impl Inwx {
 		})
 	}
 
-	pub fn create_txt_record(&self, domain: &str, content: &str) -> Result<(), InwxError> {
+	pub fn create_txt_record(&mut self, domain: &str, content: &str) -> Result<(), InwxError> {
 		let (domain, name) = self.split_domain(domain)?;
 
-		let mut request = RpcRequest::new("nameserver.createRecord", &[
+		let request = RpcRequest::new("nameserver.createRecord", &[
 			RpcRequestParameter {
 				name: "type",
 				value: RpcRequestParameterValue::String("TXT".to_owned())
@@ -125,23 +121,18 @@ impl Inwx {
 			RpcRequestParameter {
 				name: "domain",
 				value: RpcRequestParameterValue::String(domain)
-			},
-			RpcRequestParameter {
-				name: "ttl",
-				value: RpcRequestParameterValue::Int(300)
 			}
 		]);
-		request.set_cookie(self.cookie.clone());
 
-		Inwx::send_request(request)?;
+		self.send_request(request)?;
 
 		Ok(())
 	}
 
-	pub fn get_record_id(&self, domain: &str) -> Result<i32, InwxError> {
+	pub fn get_record_id(&mut self, domain: &str) -> Result<i32, InwxError> {
 		let (domain, name) = self.split_domain(domain)?;
 
-		let mut request = RpcRequest::new("nameserver.info", &[
+		let request = RpcRequest::new("nameserver.info", &[
 			RpcRequestParameter {
 				name: "type",
 				value: RpcRequestParameterValue::String("TXT".to_owned())
@@ -155,9 +146,8 @@ impl Inwx {
 				value: RpcRequestParameterValue::String(domain.to_owned())
 			}
 		]);
-		request.set_cookie(self.cookie.clone());
 
-		let response = Inwx::send_request(request)?;
+		let response = self.send_request(request)?;
 
 		let id = match evaluate_xpath(&response.get_document(), "/methodResponse/params/param/value/struct/member[name/text()=\"resData\"]/value/struct/member[name/text()=\"record\"]/value/array/data/value[1]/struct/member[name/text()=\"id\"]/value/int/text()") {
 			Ok(ref id) => id.string().parse::<i32>().ok(),
@@ -170,27 +160,25 @@ impl Inwx {
 		})
 	}
 
-	pub fn delete_txt_record(&self, domain: &str) -> Result<(), InwxError> {
+	pub fn delete_txt_record(&mut self, domain: &str) -> Result<(), InwxError> {
 		let id = self.get_record_id(domain)?;
 
-		let mut request = RpcRequest::new("nameserver.deleteRecord", &[
+		let request = RpcRequest::new("nameserver.deleteRecord", &[
 			RpcRequestParameter {
 				name: "id",
 				value: RpcRequestParameterValue::Int(id)
 			}
 		]);
-		request.set_cookie(self.cookie.clone());
 
-		Inwx::send_request(request)?;
+		self.send_request(request)?;
 
 		Ok(())
 	}
 
-	pub fn logout(self) -> Result<(), InwxError> {
-		let mut request = RpcRequest::new("account.logout", &[]);
-		request.set_cookie(self.cookie);
+	pub fn logout(mut self) -> Result<(), InwxError> {
+		let request = RpcRequest::new("account.logout", &[]);
 
-		Inwx::send_request(request)?;
+		self.send_request(request)?;
 
 		Ok(())
 	}

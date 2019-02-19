@@ -163,11 +163,11 @@ fn run() -> Result<(), String> {
 	Ok(())
 }
 
-fn execute_api_commands<F>(user: &str, pass: &str, op: F) -> Result<(), String> where F: Fn(&Inwx) -> Result<(), InwxError> {
-	let api = Inwx::new(&user, &pass).map_err(|err| format!("{}", err))?;
+fn execute_api_commands<F>(user: &str, pass: &str, op: F) -> Result<(), String> where F: Fn(&mut Inwx) -> Result<(), InwxError> {
+	let mut api = Inwx::new(&user, &pass).map_err(|err| format!("{}", err))?;
 
 	let mut err = None;
-	match op(&api) {
+	match op(&mut api) {
 		Err(e) => {
 			err = Some(e);
 		},

@@ -1,12 +1,11 @@
 use std::fmt;
 use reqwest;
 use reqwest::{Client, Response, StatusCode};
-use reqwest::header::{Cookie, SetCookie};
 use sxd_document::writer::format_document;
 use sxd_document::{parser, Package};
 use sxd_document::dom::Document;
 use sxd_xpath::evaluate_xpath;
-use cookie;
+use cookie::{Cookie, CookieJar};
 
 #[derive(Debug)]
 pub enum RpcError {
@@ -35,8 +34,7 @@ pub enum RpcRequestParameterValue {
 
 pub struct RpcRequest {
 	body: Vec<u8>,
-	cookie: Option<Cookie>,
-	method: String,
+	method: String
 }
 
 impl RpcRequest {
@@ -90,53 +88,53 @@ impl RpcRequest {
 
 		RpcRequest {
 			body: body,
-			cookie: None,
 			method: method.to_owned(),
 		}
-	}
-
-	pub fn set_cookie(&mut self, cookie: Cookie) {
-		self.cookie = Some(cookie);
 	}
 
 	pub fn get_method(&self) -> String {
 		self.method.clone()
 	}
 
-	pub fn send(self, url: &str) -> Result<RpcResponse, RpcError> {
+	pub fn send(self, url: &str, cookies: &mut CookieJar) -> Result<RpcResponse, RpcError> {
 		let client = Client::new();
 
-		let mut request = client.post(url);
-		request.body(self.body);
+		let mut request = client
+			.post(url)
+			.body(self.body);
 
-		if let Some(cookie) = self.cookie {
-			request.header(cookie);
+		let cookie_values: Vec<String> = cookies
+			.iter()
+			.map(|cookie| format!("{}", cookie.encoded()))
+			.collect();
+
+		if cookie_values.len() > 0 {
+			let cookie_values = cookie_values.join(";");
+			request = request.header(reqwest::header::COOKIE, cookie_values);
 		}
 
-		request.send()
-			.map_err(|e| RpcError::ConnectionError(e))
-			.and_then(|response| RpcResponse::new(response).ok_or(RpcError::InvalidResponse))
+		let response = request.send().map_err(|e| RpcError::ConnectionError(e))?;
+
+		RpcResponse::new(response, cookies).ok_or(RpcError::InvalidResponse)
 	}
 }
 
 pub struct RpcResponse {
 	success: bool,
-	cookie: Cookie,
 	package: Package,
 }
 
 impl RpcResponse {
-	fn new(mut response: Response) -> Option<RpcResponse> {
-		if response.status() == StatusCode::Ok {
+	fn new(mut response: Response, cookies: &mut CookieJar) -> Option<RpcResponse> {
+		if response.status() == StatusCode::OK {
 			if let Ok(ref response_text) = response.text() {
 				if let Ok(package) = parser::parse(response_text) {
 					let mut success = false;
-					let mut cookie = Cookie::new();
 
-					if let Some(&SetCookie(ref set_cookies)) = response.headers().get::<SetCookie>() {
-						for set_cookie in set_cookies {
-							if let Ok(c) = cookie::Cookie::parse(set_cookie.to_owned()) {
-								cookie.append(c.name().to_owned(), c.value().to_owned());
+					for header in response.headers().get_all(reqwest::header::SET_COOKIE) {
+						if let Ok(value) = header.to_str() {
+							if let Ok(cookie) = Cookie::parse(value.to_owned()) {
+								cookies.add(cookie);
 							}
 						}
 					}
@@ -151,7 +149,6 @@ impl RpcResponse {
 
 					return Some(RpcResponse {
 						success,
-						cookie,
 						package,
 					});
 				}
@@ -163,10 +160,6 @@ impl RpcResponse {
 
 	pub fn is_success(&self) -> bool {
 		self.success
-	}
-
-	pub fn get_cookie(&self) -> Cookie {
-		self.cookie.clone()
 	}
 
 	pub fn get_document(&self) -> Document {

@@ -2,7 +2,7 @@
 name = "letsencrypt-inwx"
 version = "1.1.1"
 description = "A small cli utility for automating the letsencrypt dns-01 challenge for domains hosted by inwx"
-authors = ["Matthias Herzog <gh@f8t.eu>"]
+authors = ["Matthias Herzog"]
 readme = "README.md"
 license = "MIT"
 repository = "https://github.com/kegato/letsencrypt-inwx"
@@ -17,10 +17,13 @@ assets = [
 ]
 
 [dependencies]
-sxd-xpath = "^0.4.2"
-sxd-document = "^0.3.0"
-reqwest = "^0.8.6"
-cookie = "^0.11.0"
-trust-dns = "0.15.0"
-clap = "^2.32.0"
-openssl-probe = "^0.1.2"
+sxd-xpath = "*"
+sxd-document = "*"
+reqwest = "*"
+trust-dns = "*"
+clap = "*"
+openssl-probe = "*"
+
+[dependencies.cookie]
+version = "*"
+features = ["percent-encode"]
