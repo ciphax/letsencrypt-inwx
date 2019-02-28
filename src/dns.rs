@@ -4,8 +4,8 @@ use trust_dns::udp::UdpClientConnection;
 use trust_dns::op::DnsResponse;
 use trust_dns::rr::{DNSClass, Name, RData, Record, RecordType};
 
-fn dns_client() -> SyncClient<UdpClientConnection> {
-	let address = "8.8.8.8:53".parse().unwrap();
+fn dns_client(dns_server: &str) -> SyncClient<UdpClientConnection> {
+	let address = format!("{}:53", dns_server).parse().unwrap();
 	let conn = UdpClientConnection::new(address).unwrap();
 	SyncClient::new(conn)
 }
@@ -30,8 +30,8 @@ pub fn remove_trailing_dot(domain: &str) -> String {
 	domain
 }
 
-fn check_cname(domain: &str) -> Option<String> {
-	let client = dns_client();
+fn check_cname(dns_server: &str, domain: &str) -> Option<String> {
+	let client = dns_client(dns_server);
 	let name = Name::from_str(&add_trailing_dot(domain)).ok()?;
 	let response: DnsResponse = client.query(&name, DNSClass::IN, RecordType::CNAME).ok()?;
 	let answers: &[Record] = response.answers();
@@ -45,11 +45,11 @@ fn check_cname(domain: &str) -> Option<String> {
 	None
 }
 
-pub fn lookup_real_domain(domain: &str) -> String {
+pub fn lookup_real_domain(dns_server: &str, domain: &str) -> String {
 	let mut depth = 0;
 
 	let mut domain = domain.to_owned();
-	while let Some(real_name) = check_cname(&domain) {
+	while let Some(real_name) = check_cname(dns_server, &domain) {
 		domain = real_name;
 
 		if depth >= 10 {
@@ -62,8 +62,8 @@ pub fn lookup_real_domain(domain: &str) -> String {
 	domain
 }
 
-pub fn check_txt_record(domain: &str, value: &str) -> bool {
-	let client = dns_client();
+pub fn check_txt_record(dns_server: &str, domain: &str, value: &str) -> bool {
+	let client = dns_client(dns_server);
 	let name = match Name::from_str(&add_trailing_dot(domain)) {
 		Ok(name) => name,
 		Err(_) => return false

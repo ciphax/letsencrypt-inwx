@@ -2,74 +2,59 @@ use std::fmt;
 use cookie::CookieJar;
 use sxd_xpath::{evaluate_xpath, Value};
 use super::rpc::{RpcRequest, RpcResponse, RpcRequestParameter, RpcRequestParameterValue, RpcError};
+use super::config::Account;
 
 const API_URL: &str = "https://api.domrobot.com/xmlrpc/";
+const OTE_API_URL: &str = "https://api.ote.domrobot.com/xmlrpc/";
 
 #[derive(Debug)]
 pub enum InwxError {
 	RpcError(RpcError),
-	ApiError {
-		method: String,
-		reason: String,
-		msg: String
-	}
+	DomainNotFound,
+	RecordNotFound
 }
 
 impl fmt::Display for InwxError {
 	fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
 		match self {
-			&InwxError::RpcError(ref e) => write!(f, "The inwx api call failed: {}", e),
-			&InwxError::ApiError { ref method, ref msg, ref reason } => write!(f, "method={},msg={},reason={}", method, msg, reason)
+			&InwxError::RpcError(ref e) => write!(f, "An inwx api call failed: {}", e),
+			&InwxError::DomainNotFound => write!(f, "There is no nameserver for the specified domain"),
+			&InwxError::RecordNotFound => write!(f, "The specified record does not exist")
 		}
 	}
 }
 
-pub struct Inwx {
-	cookies: CookieJar
+impl From<RpcError> for InwxError {
+	fn from(rpc_error: RpcError) -> InwxError {
+		InwxError::RpcError(rpc_error)
+	}
 }
 
-impl Inwx {
+pub struct Inwx<'a> {
+	cookies: CookieJar,
+	account: &'a Account
+}
+
+impl<'a> Inwx<'a> {
 	fn send_request(&mut self, request: RpcRequest) -> Result<RpcResponse, InwxError> {
-		let method = request.get_method();
+		let url = match self.account.ote {
+			true => OTE_API_URL,
+			false => API_URL
+		};
+		let response = request.send(url, &mut self.cookies)?;
 
-		let response = request.send(API_URL, &mut self.cookies).map_err(|e| InwxError::RpcError(e))?;
-
-		if response.is_success() {
-			Ok(response)
-		} else {
-			let msg = match evaluate_xpath(
-				&response.get_document(),
-				"/methodResponse/params/param/value/struct/member[name/text()=\"msg\"]/value/string/text()"
-			) {
-				Ok(ref value) => value.string(),
-				Err(_) => String::new()
-			};
-
-			let reason = match evaluate_xpath(
-				&response.get_document(),
-				"/methodResponse/params/param/value/struct/member[name/text()=\"reason\"]/value/string/text()"
-			) {
-				Ok(ref value) => value.string(),
-				Err(_) => String::new()
-			};
-
-			Err(InwxError::ApiError {
-				msg,
-				reason,
-				method
-			})
-		}
+		Ok(response)
 	}
 
-	fn login(&mut self, user: &str, pass: &str) -> Result<(), InwxError> {
+	fn login(&mut self) -> Result<(), InwxError> {
 		let request = RpcRequest::new("account.login", &[
 			RpcRequestParameter {
 				name: "user",
-				value: RpcRequestParameterValue::String(user.to_owned())
+				value: RpcRequestParameterValue::String(self.account.username.to_owned())
 			},
 			RpcRequestParameter {
 				name: "pass",
-				value: RpcRequestParameterValue::String(pass.to_owned())
+				value: RpcRequestParameterValue::String(self.account.password.to_owned())
 			}
 		]);
 
@@ -78,12 +63,13 @@ impl Inwx {
 		Ok(())
 	}
 
-	pub fn new(user: &str, pass: &str) -> Result<Inwx, InwxError> {
+	pub fn new(account: &'a Account) -> Result<Inwx<'a>, InwxError> {
 		let mut api = Inwx {
-			cookies: CookieJar::new()
+			cookies: CookieJar::new(),
+			account
 		};
 
-		api.login(user, pass)?;
+		api.login()?;
 
 		Ok(api)
 	}
@@ -91,12 +77,6 @@ impl Inwx {
 	fn split_domain(&mut self, domain: &str) -> Result<(String, String), InwxError> {
 		let page_size = 20;
 		let mut page = 1;
-
-		let dnf_error = || InwxError::ApiError {
-			method: "nameserver.list".to_owned(),
-			msg: "Domain not found".to_owned(),
-			reason: "".to_owned()
-		};
 
 		loop {
 			let request = RpcRequest::new("nameserver.list", &[
@@ -118,7 +98,7 @@ impl Inwx {
 			)
 				.ok()
 				.and_then(|value| value.string().parse().ok())
-				.ok_or_else(dnf_error)?;
+				.ok_or_else(|| InwxError::DomainNotFound)?;
 
 			if let Ok(Value::Nodeset(ref nodes)) = evaluate_xpath(&response.get_document(), "/methodResponse/params/param/value/struct/member[name/text()=\"resData\"]/value/struct/member[name/text()=\"domains\"]/value/array/data/value/struct/member[name/text()=\"domain\"]/value/string/text()") {
 				for node in nodes {
@@ -139,7 +119,7 @@ impl Inwx {
 			if total > page * page_size {
 				page += 1;
 			} else {
-				return Err(dnf_error());
+				return Err(InwxError::DomainNotFound);
 			}
 		}
 	}
@@ -196,11 +176,7 @@ impl Inwx {
 			Err(_) => None
 		};
 
-		id.ok_or(InwxError::ApiError {
-			method: "nameserver.info".to_owned(),
-			msg: "Record not found".to_owned(),
-			reason: "".to_owned()
-		})
+		id.ok_or_else(|| InwxError::RecordNotFound)
 	}
 
 	pub fn delete_txt_record(&mut self, domain: &str) -> Result<(), InwxError> {

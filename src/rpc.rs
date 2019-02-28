@@ -10,14 +10,20 @@ use cookie::{Cookie, CookieJar};
 #[derive(Debug)]
 pub enum RpcError {
 	ConnectionError(reqwest::Error),
-	InvalidResponse
+	InvalidResponse,
+	ApiError {
+		method: String,
+		reason: String,
+		msg: String
+	}
 }
 
 impl fmt::Display for RpcError {
 	fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
 		match self {
 			&RpcError::InvalidResponse => write!(f, "The inwx api did not return a valid response"),
-			&RpcError::ConnectionError(ref e) => write!(f, "Could not connect to the inwx api: {}", e)
+			&RpcError::ConnectionError(ref e) => write!(f, "Could not connect to the inwx api: {}", e),
+			&RpcError::ApiError { ref method, ref msg, ref reason } => write!(f, "The inwx api did return an error: method={}, msg={}, reason={}", method, msg, reason)
 		}
 	}
 }
@@ -92,10 +98,6 @@ impl RpcRequest {
 		}
 	}
 
-	pub fn get_method(&self) -> String {
-		self.method.clone()
-	}
-
 	pub fn send(self, url: &str, cookies: &mut CookieJar) -> Result<RpcResponse, RpcError> {
 		let client = Client::new();
 
@@ -115,17 +117,16 @@ impl RpcRequest {
 
 		let response = request.send().map_err(|e| RpcError::ConnectionError(e))?;
 
-		RpcResponse::new(response, cookies).ok_or(RpcError::InvalidResponse)
+		RpcResponse::new(response, self.method, cookies)
 	}
 }
 
 pub struct RpcResponse {
-	success: bool,
-	package: Package,
+	package: Package
 }
 
 impl RpcResponse {
-	fn new(mut response: Response, cookies: &mut CookieJar) -> Option<RpcResponse> {
+	fn new(mut response: Response, method: String, cookies: &mut CookieJar) -> Result<RpcResponse, RpcError> {
 		if response.status() == StatusCode::OK {
 			if let Ok(ref response_text) = response.text() {
 				if let Ok(package) = parser::parse(response_text) {
@@ -147,19 +148,39 @@ impl RpcResponse {
 						}
 					}
 
-					return Some(RpcResponse {
-						success,
-						package,
+					let mut msg = String::new();
+					let mut reason = String::new();
+
+					if !success {
+						if let Ok(value) = evaluate_xpath(
+							&package.as_document(),
+							"/methodResponse/params/param/value/struct/member[name/text()=\"msg\"]/value/string/text()"
+						) {
+							msg = value.string();
+						}
+
+						if let Ok(value) = evaluate_xpath(
+							&package.as_document(),
+							"/methodResponse/params/param/value/struct/member[name/text()=\"reason\"]/value/string/text()"
+						) {
+							reason = value.string();
+						}
+
+						return Err(RpcError::ApiError {
+							method,
+							msg,
+							reason
+						});
+					}
+
+					return Ok(RpcResponse {
+						package
 					});
 				}
 			}
 		}
 
-		None
-	}
-
-	pub fn is_success(&self) -> bool {
-		self.success
+		Err(RpcError::InvalidResponse)
 	}
 
 	pub fn get_document(&self) -> Document {
