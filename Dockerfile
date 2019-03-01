@@ -7,5 +7,6 @@ FROM certbot/certbot:rolling
 VOLUME /etc/letsencrypt
 COPY --from=builder /home/rust/src/target/x86_64-unknown-linux-musl/release/letsencrypt-inwx /usr/bin/
 COPY etc/* /usr/lib/letsencrypt-inwx/
+RUN chmod +x /usr/lib/letsencrypt-inwx/*
 
-ENTRYPOINT ["/bin/sh", "/usr/lib/letsencrypt-inwx/docker-entrypoint.sh"]
+ENTRYPOINT ["/usr/lib/letsencrypt-inwx/docker-entrypoint.sh"]

@@ -2,7 +2,7 @@
 
 CONFIG_PATH=/etc/letsencrypt-inwx.json
 
-if [ -f ~/.config/letsencrypt-inwx-cred ]; then
+if [ -f ~/.config/letsencrypt-inwx.json ]; then
 	CONFIG_PATH=~/.config/letsencrypt-inwx.json
 fi
 
