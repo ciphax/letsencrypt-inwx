@@ -3,3 +3,4 @@
 **/*.rs.bk
 **/*.rs.fmt
 /deploy/
+/config.json
