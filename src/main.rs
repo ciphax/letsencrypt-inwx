@@ -17,10 +17,10 @@ mod cli;
 use std::process::exit;
 
 fn main() {
-	openssl_probe::init_ssl_cert_env_vars();
+    openssl_probe::init_ssl_cert_env_vars();
 
-	if let Err(msg) = cli::run() {
-		eprintln!("=> Error: {}", msg);
-		exit(1);
-	}
+    if let Err(msg) = cli::run() {
+        eprintln!("=> Error: {}", msg);
+        exit(1);
+    }
 }

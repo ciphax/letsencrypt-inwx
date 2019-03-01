@@ -1,6 +1,8 @@
-/.git/
+/.vscode
+/.git
 /.gitignore
 /.travis-yml
 /target
 /LICENSE.txt
 /README.md
+/config.json

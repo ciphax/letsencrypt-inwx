@@ -18,27 +18,27 @@ You can store the configuration file at `/etc/letsencrypt-inwx.json` or at `~/.c
 The configuration file should look like this (without the comments):
 ```json
 {
-	"accounts": [
-		{
-			"username": "user",
-			"password": "pass",
-			// optional, if the domain is not configured all accounts will be tried
-			"domains": [
-				"example.com"
-			],
-			// optional, if true the public inwx test server will be used
-			"ote": false
-		}
-	],
-	// optional
-	"options": {
-		// optional, if true letsencrypt-inwx will not wait until the created record is publicly visible, default: false
-		"no_dns_check": false,
-		// optional, the amount of time in seconds to wait after creating a record, default: 5 seconds
-		"wait_interval": 5,
-		// optional: the dns server to use, default: the google public dns server
-		"dns_server": "8.8.8.8"
-	}
+    "accounts": [
+        {
+            "username": "user",
+            "password": "pass",
+            // optional, if the domain is not configured all accounts will be tried
+            "domains": [
+                "example.com"
+            ],
+            // optional, if true the public inwx test server will be used
+            "ote": false
+        }
+    ],
+    // optional
+    "options": {
+        // optional, if true letsencrypt-inwx will not wait until the created record is publicly visible, default: false
+        "no_dns_check": false,
+        // optional, the amount of time in seconds to wait after creating a record, default: 5 seconds
+        "wait_interval": 5,
+        // optional: the dns server to use, default: the google public dns server
+        "dns_server": "8.8.8.8"
+    }
 }
 ```
 

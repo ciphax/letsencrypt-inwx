@@ -3,7 +3,7 @@
 CONFIG_PATH=/etc/letsencrypt-inwx.json
 
 if [ -f ~/.config/letsencrypt-inwx.json ]; then
-	CONFIG_PATH=~/.config/letsencrypt-inwx.json
+    CONFIG_PATH=~/.config/letsencrypt-inwx.json
 fi
 
 /usr/bin/letsencrypt-inwx delete -c $CONFIG_PATH -d "_acme-challenge.$CERTBOT_DOMAIN"
