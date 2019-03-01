@@ -1,9 +1,9 @@
 #!/bin/sh
 
-CRED_PATH=/etc/letsencrypt-inwx-cred
+CONFIG_PATH=/etc/letsencrypt-inwx.json
 
 if [ -f ~/.config/letsencrypt-inwx-cred ]; then
-	CRED_PATH=~/.config/letsencrypt-inwx-cred
+	CONFIG_PATH=~/.config/letsencrypt-inwx.json
 fi
 
-/usr/bin/letsencrypt-inwx create -c $CRED_PATH -d "_acme-challenge.$CERTBOT_DOMAIN" -v "$CERTBOT_VALIDATION"
+/usr/bin/letsencrypt-inwx create -c $CONFIG_PATH -d "_acme-challenge.$CERTBOT_DOMAIN" -v "$CERTBOT_VALIDATION"
