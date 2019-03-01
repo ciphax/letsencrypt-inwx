@@ -21,7 +21,7 @@ EOF
 fi
 
 set -x
-certbot -n --agree-tos --server https://acme-v02.api.letsencrypt.org/directory $@
+certbot -n --agree-tos $@
 set +x
 
 if [ $CONF_CREATED = true ]; then

@@ -49,7 +49,7 @@ The configuration file should look like this (without the comments):
 - You can renew your certificate by running `docker run --rm -it -v /etc/letsencrypt-inwx.json:/etc/letsencrypt-inwx.json -v /etc/letsencrypt:/etc/letsencrypt kegato/letsencrypt-inwx renew`
 
 ### With certbot
-- You can get certificates from [certbot](https://certbot.eff.org/) by running `sudo certbot certonly -n --agree-tos --server https://acme-v02.api.letsencrypt.org/directory --email <your_email> --preferred-challenges=dns-01 --manual --manual-auth-hook /usr/lib/letsencrypt-inwx/certbot-inwx-auth --manual-cleanup-hook /usr/lib/letsencrypt-inwx/certbot-inwx-cleanup --manual-public-ip-logging-ok -d <your_domain>`
+- You can get certificates from [certbot](https://certbot.eff.org/) by running `sudo certbot certonly -n --agree-tos --email <your_email> --preferred-challenges=dns-01 --manual --manual-auth-hook /usr/lib/letsencrypt-inwx/certbot-inwx-auth --manual-cleanup-hook /usr/lib/letsencrypt-inwx/certbot-inwx-cleanup --manual-public-ip-logging-ok -d <your_domain>`
 
 ### Manually
 - Create a txt record with `letsencrypt-inwx create -c <config_file> -d _acme-challenge.<your_domain> -v <acme_token>`
