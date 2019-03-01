@@ -1,4 +1,4 @@
-# letsencrypt-inwx [![Build Status](https://travis-ci.org/kegato/letsencrypt-inwx.svg?branch=master)](https://travis-ci.org/kegato/letsencrypt-inwx) [![Docker Build Status](https://img.shields.io/docker/build/kegato/letsencrypt-inwx.svg)](https://hub.docker.com/r/kegato/letsencrypt-inwx/) [![Crates.io](https://img.shields.io/crates/v/letsencrypt-inwx.svg)](https://crates.io/crates/letsencrypt-inwx)
+# letsencrypt-inwx [![Build Status](https://travis-ci.org/kegato/letsencrypt-inwx.svg?branch=master)](https://travis-ci.org/kegato/letsencrypt-inwx) [![Docker Pulls](https://img.shields.io/docker/pulls/kegato/letsencrypt-inwx.svg)](https://hub.docker.com/r/kegato/letsencrypt-inwx/) [![Crates.io](https://img.shields.io/crates/v/letsencrypt-inwx.svg)](https://crates.io/crates/letsencrypt-inwx)
 
 A small cli utility for automating the letsencrypt dns-01 challenge for domains hosted by inwx. This allows you to obtain wildcard certificates from letsencrypt.
 
@@ -13,31 +13,47 @@ A small cli utility for automating the letsencrypt dns-01 challenge for domains 
 ### With cargo
 - Run `cargo install letsencrypt-inwx`
 
-## Usage
-### With certbot
-- Put your inwx login data seperated by a newline into `/etc/letsencrypt-inwx-cred`
-- Make sure the file is only readable for root `sudo chmod 600 /etc/letsencrypt-inwx-cred`
-- You can now get certificates from [certbot](https://certbot.eff.org/) by running `sudo certbot certonly -n --agree-tos --email <your_email> --server https://acme-v02.api.letsencrypt.org/directory --preferred-challenges=dns-01 --manual --manual-auth-hook /usr/lib/letsencrypt-inwx/certbot-inwx-auth --manual-cleanup-hook /usr/lib/letsencrypt-inwx/certbot-inwx-cleanup --manual-public-ip-logging-ok -d <your_domain>`
-
-#### Notes
-- You need at least certbot 0.22.0 to issue wildcard certificates.
-- You can put your inwx login data into `~/.config/letsencrypt-inwx-cred` if you want to run certbot as non-root user
-- This tool uses the google dns server 8.8.8.8 to check the supplied domain for CNAMEs and to verify that the dns change is publicly visible
-
-### With Docker and certbot
-- Put your inwx login data into a docker env file like this
-```sh
-INWX_USER=username
-INWX_PASSWD=password
+## Configuration
+You can store the configuration file at `/etc/letsencrypt-inwx.json` or at `~/.config/letsencrypt-inwx.json` when used with certbot or specify it's path with the `-c` option.
+The configuration file should look like this (without the comments):
+```json
+{
+	"accounts": [
+		{
+			"username": "user",
+			"password": "pass",
+			// optional, if the domain is not configured all accounts will be tried
+			"domains": [
+				"example.com"
+			],
+			// optional, if true the public inwx test server will be used
+			"ote": false
+		}
+	],
+	// optional
+	"options": {
+		// optional, if true letsencrypt-inwx will not wait until the created record is publicly visible, default: false
+		"no_dns_check": false,
+		// optional, the amount of time in seconds to wait after creating a record, default: 5 seconds
+		"wait_interval": 5,
+		// optional: the dns server to use, default: the google public dns server
+		"dns_server": "8.8.8.8"
+	}
+}
 ```
-- Generate your certificate by running `docker run --rm -it --env-file <your-env-file> -v /etc/letsencrypt:/etc/letsencrypt kegato/letsencrypt-inwx certonly --email <your_email> --preferred-challenges=dns-01 --manual --manual-auth-hook /usr/lib/letsencrypt-inwx/certbot-inwx-auth --manual-cleanup-hook /usr/lib/letsencrypt-inwx/certbot-inwx-cleanup --manual-public-ip-logging-ok -d <your_domain>`
-- Your certificate is now at `/etc/letsencrypt/live/<your_domain>/`
-- You can renew your certificate by running `docker run --rm -it --env-file <your-env-file> -v /etc/letsencrypt:/etc/letsencrypt kegato/letsencrypt-inwx renew`
+
+## Usage
+### With Docker and certbot
+- Generate your certificate by running `docker run --rm -it -v /etc/letsencrypt-inwx.json:/etc/letsencrypt-inwx.json -v /etc/letsencrypt:/etc/letsencrypt kegato/letsencrypt-inwx certonly --email <your_email> --preferred-challenges=dns-01 --manual --manual-auth-hook /usr/lib/letsencrypt-inwx/certbot-inwx-auth --manual-cleanup-hook /usr/lib/letsencrypt-inwx/certbot-inwx-cleanup --manual-public-ip-logging-ok -d <your_domain>`
+- You can find your certificate in `/etc/letsencrypt/live/<your_domain>/`
+- You can renew your certificate by running `docker run --rm -it -v /etc/letsencrypt-inwx.json:/etc/letsencrypt-inwx.json -v /etc/letsencrypt:/etc/letsencrypt kegato/letsencrypt-inwx renew`
+
+### With certbot
+- You can get certificates from [certbot](https://certbot.eff.org/) by running `sudo certbot certonly -n --agree-tos --server https://acme-v02.api.letsencrypt.org/directory --email <your_email> --preferred-challenges=dns-01 --manual --manual-auth-hook /usr/lib/letsencrypt-inwx/certbot-inwx-auth --manual-cleanup-hook /usr/lib/letsencrypt-inwx/certbot-inwx-cleanup --manual-public-ip-logging-ok -d <your_domain>`
 
 ### Manually
-- Put your inwx login data seperated by a newline into a file
-- Create a txt record with `letsencrypt-inwx create -c <credential_file> -d _acme-challenge.your-domain.com -v <acme_token>`
-- Delete it with `letsencrypt-inwx delete -c <credential_file> -d _acme-challenge.your-domain.com`
+- Create a txt record with `letsencrypt-inwx create -c <config_file> -d _acme-challenge.<your_domain> -v <acme_token>`
+- Delete it with `letsencrypt-inwx delete -c <config_file> -d _acme-challenge.<your_domain>`
 
 ## Building
 ### Requirements
