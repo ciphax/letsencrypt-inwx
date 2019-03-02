@@ -16,7 +16,7 @@ A small cli utility for automating the letsencrypt dns-01 challenge for domains 
 ## Configuration
 You can store the configuration file at `/etc/letsencrypt-inwx.json` or at `~/.config/letsencrypt-inwx.json` when used with certbot or specify it's path with the `-c` option.
 The configuration file should look like this (without the comments):
-```json
+```js
 {
     "accounts": [
         {
