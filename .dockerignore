@@ -1,7 +1,7 @@
 /.vscode
 /.git
 /.gitignore
-/.travis-yml
+/.circleci
 /target
 /LICENSE.txt
 /README.md
