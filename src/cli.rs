@@ -123,7 +123,7 @@ fn delete(config: &Config, domain: &str) -> Result<(), String> {
 
 pub fn run() -> Result<(), String> {
     let mut app = App::new("letsencrypt-inwx")
-        .version("1.1.2")
+        .version("2.0.0")
         .about("A small cli utility for automating the letsencrypt dns-01 challenge for domains hosted by inwx")
         .subcommand(SubCommand::with_name("create")
             .about("create a TXT record")
