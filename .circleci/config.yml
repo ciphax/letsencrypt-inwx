@@ -1,4 +1,4 @@
-version: 2.1
+version: 2
 jobs:
   build:
     docker:
@@ -61,28 +61,38 @@ jobs:
     steps:
       - checkout
       - run:
-        name: "Publish crate to crates.io"
-        command: |
-          cargo login ${CRATES_IO_TOKEN}
-          cargo publish
+          name: "Publish crate to crates.io"
+          command: |
+            cargo login ${CRATES_IO_TOKEN}
+            cargo publish
+
 workflows:
   version: 2
   main:
     jobs:
-      - build
+      - build:
+          filters:
+            tags:
+              only: /^[0-9]+\.[0-9]+\.[0-9]+$/
       - publish-docker-image:
           requires:
             - build
           filters:
             tags:
               only: /^[0-9]+\.[0-9]+\.[0-9]+$/
+            branches:
+              ignore: /.*/
       - publish-github-release:
           requires:
             - build
           filters:
             tags:
               only: /^[0-9]+\.[0-9]+\.[0-9]+$/
+            branches:
+              ignore: /.*/
       - publish-crate:
           filters:
             tags:
               only: /^[0-9]+\.[0-9]+\.[0-9]+$/
+            branches:
+              ignore: /.*/

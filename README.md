@@ -1,4 +1,4 @@
-# letsencrypt-inwx [![Docker Pulls](https://img.shields.io/docker/pulls/kegato/letsencrypt-inwx.svg)](https://hub.docker.com/r/kegato/letsencrypt-inwx/) [![Crates.io](https://img.shields.io/crates/v/letsencrypt-inwx.svg)](https://crates.io/crates/letsencrypt-inwx)
+# letsencrypt-inwx [![CircleCI](https://circleci.com/gh/kegato/letsencrypt-inwx.svg?style=svg)](https://circleci.com/gh/kegato/letsencrypt-inwx) [![Docker Pulls](https://img.shields.io/docker/pulls/kegato/letsencrypt-inwx.svg)](https://hub.docker.com/r/kegato/letsencrypt-inwx/) [![Crates.io](https://img.shields.io/crates/v/letsencrypt-inwx.svg)](https://crates.io/crates/letsencrypt-inwx)
 
 A small cli utility for automating the letsencrypt dns-01 challenge for domains hosted by inwx. This allows you to obtain wildcard certificates from letsencrypt.
 
