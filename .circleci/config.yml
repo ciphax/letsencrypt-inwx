@@ -19,8 +19,8 @@ jobs:
             docker create --name builder letsencrypt-inwx-builder
             docker cp builder:/home/rust/src/target/x86_64-unknown-linux-musl/release/letsencrypt-inwx .
             docker cp builder:/home/rust/src/target/x86_64-unknown-linux-musl/debian .
-            mv debian/*.deb artifacts/letsencrypt-inwx.deb
-            zip artifacts/letsencrypt-inwx.zip letsencrypt-inwx
+            mv debian/*.deb artifacts/letsencrypt-inwx-x86_64-linux.deb
+            zip artifacts/letsencrypt-inwx-x86_64-linux.zip letsencrypt-inwx
       - persist_to_workspace:
           root: .
           paths:
