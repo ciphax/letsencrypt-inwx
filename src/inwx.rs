@@ -106,7 +106,7 @@ impl<'a> Inwx<'a> {
                         let domain_root = text.text();
 
                         if domain.ends_with(&format!(".{}", domain_root)) {
-                            let mut name = &domain[0..domain.len() - domain_root.len() - 1];
+                            let name = &domain[0..domain.len() - domain_root.len() - 1];
 
                             return Ok((domain_root.to_owned(), name.to_owned()));
                         } else if domain == domain_root {

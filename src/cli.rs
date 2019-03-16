@@ -3,9 +3,9 @@ use std::io::BufReader;
 use std::thread::sleep;
 use std::time::{Duration, Instant};
 use clap::{Arg, App, SubCommand};
-use config::Config;
-use inwx::{Inwx, InwxError};
-use dns::{check_txt_record, lookup_real_domain};
+use crate::config::Config;
+use crate::inwx::{Inwx, InwxError};
+use crate::dns::{check_txt_record, lookup_real_domain};
 
 impl From<InwxError> for String {
     fn from(inwx_error: InwxError) -> String {
