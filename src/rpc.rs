@@ -1,11 +1,11 @@
-use std::fmt;
+use cookie::{Cookie, CookieJar};
 use reqwest;
 use reqwest::{Client, Response, StatusCode};
+use std::fmt;
+use sxd_document::dom::Document;
 use sxd_document::writer::format_document;
 use sxd_document::{parser, Package};
-use sxd_document::dom::Document;
 use sxd_xpath::evaluate_xpath;
-use cookie::{Cookie, CookieJar};
 
 #[derive(Debug)]
 pub enum RpcError {
@@ -14,16 +14,26 @@ pub enum RpcError {
     ApiError {
         method: String,
         reason: String,
-        msg: String
-    }
+        msg: String,
+    },
 }
 
 impl fmt::Display for RpcError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
             &RpcError::InvalidResponse => write!(f, "The inwx api did not return a valid response"),
-            &RpcError::ConnectionError(ref e) => write!(f, "Could not connect to the inwx api: {}", e),
-            &RpcError::ApiError { ref method, ref msg, ref reason } => write!(f, "The inwx api did return an error: method={}, msg={}, reason={}", method, msg, reason)
+            &RpcError::ConnectionError(ref e) => {
+                write!(f, "Could not connect to the inwx api: {}", e)
+            }
+            &RpcError::ApiError {
+                ref method,
+                ref msg,
+                ref reason,
+            } => write!(
+                f,
+                "The inwx api did return an error: method={}, msg={}, reason={}",
+                method, msg, reason
+            ),
         }
     }
 }
@@ -40,7 +50,7 @@ pub enum RpcRequestParameterValue {
 
 pub struct RpcRequest {
     body: Vec<u8>,
-    method: String
+    method: String,
 }
 
 impl RpcRequest {
@@ -105,9 +115,7 @@ impl RpcRequest {
             trace!("Sending request {}", body);
         }
 
-        let mut request = client
-            .post(url)
-            .body(self.body);
+        let mut request = client.post(url).body(self.body);
 
         let cookie_values: Vec<String> = cookies
             .iter()
@@ -126,11 +134,15 @@ impl RpcRequest {
 }
 
 pub struct RpcResponse {
-    package: Package
+    package: Package,
 }
 
 impl RpcResponse {
-    fn new(mut response: Response, method: String, cookies: &mut CookieJar) -> Result<RpcResponse, RpcError> {
+    fn new(
+        mut response: Response,
+        method: String,
+        cookies: &mut CookieJar,
+    ) -> Result<RpcResponse, RpcError> {
         if response.status() == StatusCode::OK {
             if let Ok(ref response_text) = response.text() {
                 trace!("Received response {:?}", response_text);
@@ -175,13 +187,11 @@ impl RpcResponse {
                         return Err(RpcError::ApiError {
                             method,
                             msg,
-                            reason
+                            reason,
                         });
                     }
 
-                    return Ok(RpcResponse {
-                        package
-                    });
+                    return Ok(RpcResponse { package });
                 }
             }
         }

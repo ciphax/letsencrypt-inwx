@@ -1,13 +1,16 @@
+use crate::config::Config;
+use crate::dns::{check_txt_record, lookup_real_domain};
+use crate::inwx::{Inwx, InwxError};
+use clap::{App, Arg, SubCommand};
 use std::fs::File;
 use std::io::BufReader;
 use std::thread::sleep;
 use std::time::{Duration, Instant};
-use clap::{Arg, App, SubCommand};
-use crate::config::Config;
-use crate::inwx::{Inwx, InwxError};
-use crate::dns::{check_txt_record, lookup_real_domain};
 
-fn execute_api_commands<F>(config: &Config, domain: &str, op: F) -> Result<bool, ()> where F: Fn(&mut Inwx) -> Result<(), InwxError> {
+fn execute_api_commands<F>(config: &Config, domain: &str, op: F) -> Result<bool, ()>
+where
+    F: Fn(&mut Inwx) -> Result<(), InwxError>,
+{
     if config.accounts.len() == 0 {
         error!("No accounts configured");
         return Err(());
@@ -15,30 +18,35 @@ fn execute_api_commands<F>(config: &Config, domain: &str, op: F) -> Result<bool,
 
     let mut filtered_accounts = Vec::new();
 
-    match config.accounts.iter().find(|account|
-        account.domains.iter().any(|d| domain == d || domain.ends_with(&format!(".{}", d)))
-    ) {
+    match config.accounts.iter().find(|account| {
+        account
+            .domains
+            .iter()
+            .any(|d| domain == d || domain.ends_with(&format!(".{}", d)))
+    }) {
         Some(account) => {
             info!("Using account {}", account.username);
             filtered_accounts.push(account);
-        },
+        }
         None => {
-            warn!("Domain not configured: Trying {} configured domains", config.accounts.len());
+            warn!(
+                "Domain not configured: Trying {} configured domains",
+                config.accounts.len()
+            );
             filtered_accounts.extend(config.accounts.iter());
         }
     };
-
 
     for account in filtered_accounts {
         let mut success = false;
         let mut api = Inwx::new(&account).map_err(|e| error!("{}", e))?;
 
         match op(&mut api) {
-            Err(InwxError::DomainNotFound) => {},
+            Err(InwxError::DomainNotFound) => {}
             Err(e) => {
                 error!("{}", e);
                 return Err(());
-            },
+            }
             _ => {
                 success = true;
             }
@@ -60,7 +68,10 @@ fn execute_api_commands<F>(config: &Config, domain: &str, op: F) -> Result<bool,
 fn read_config(path: &str) -> Result<Config, ()> {
     let file = File::open(path).map_err(|e| error!("Failed to open config file: {}", e))?;
     let reader = BufReader::new(file);
-    Ok(serde_json::from_reader(reader).map_err(|e| error!("Failed to parse config file: {}", e))?)
+    Ok(
+        serde_json::from_reader(reader)
+            .map_err(|e| error!("Failed to parse config file: {}", e))?,
+    )
 }
 
 fn create(config: &Config, domain: &str, value: &str) -> Result<(), ()> {
@@ -99,7 +110,10 @@ fn create(config: &Config, domain: &str, value: &str) -> Result<(), ()> {
     }
 
     if config.options.wait_interval > 0 {
-        info!("Waiting {} additional seconds...", &config.options.wait_interval);
+        info!(
+            "Waiting {} additional seconds...",
+            &config.options.wait_interval
+        );
 
         sleep(Duration::from_secs(config.options.wait_interval));
 
@@ -172,13 +186,19 @@ pub fn run() -> Result<(), ()> {
 
     if let Some(matches) = matches.subcommand_matches("create") {
         let config = read_config(matches.value_of("configfile").unwrap())?;
-        let domain = lookup_real_domain(&config.options.dns_server, matches.value_of("domain").unwrap());
+        let domain = lookup_real_domain(
+            &config.options.dns_server,
+            matches.value_of("domain").unwrap(),
+        );
         let value = matches.value_of("value").unwrap();
 
         create(&config, &domain, &value)?;
     } else if let Some(matches) = matches.subcommand_matches("delete") {
         let config = read_config(matches.value_of("configfile").unwrap())?;
-        let domain = lookup_real_domain(&config.options.dns_server, matches.value_of("domain").unwrap());
+        let domain = lookup_real_domain(
+            &config.options.dns_server,
+            matches.value_of("domain").unwrap(),
+        );
 
         delete(&config, &domain)?;
     } else {

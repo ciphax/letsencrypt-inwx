@@ -1,8 +1,8 @@
 use std::str::FromStr;
 use trust_dns::client::{Client, SyncClient};
-use trust_dns::udp::UdpClientConnection;
 use trust_dns::op::DnsResponse;
 use trust_dns::rr::{DNSClass, Name, RData, Record, RecordType};
+use trust_dns::udp::UdpClientConnection;
 
 fn dns_client(dns_server: &str) -> SyncClient<UdpClientConnection> {
     let address = format!("{}:53", dns_server).parse().unwrap();
@@ -67,7 +67,7 @@ pub fn check_txt_record(dns_server: &str, domain: &str, value: &str) -> bool {
     let client = dns_client(dns_server);
     let name = match Name::from_str(&add_trailing_dot(domain)) {
         Ok(name) => name,
-        Err(_) => return false
+        Err(_) => return false,
     };
 
     if let Ok(response) = client.query(&name, DNSClass::IN, RecordType::TXT) {
