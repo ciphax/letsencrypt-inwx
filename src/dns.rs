@@ -50,6 +50,7 @@ pub fn lookup_real_domain(dns_server: &str, domain: &str) -> String {
 
     let mut domain = domain.to_owned();
     while let Some(real_name) = check_cname(dns_server, &domain) {
+        debug!("Using {} for {}", real_name, domain);
         domain = real_name;
 
         if depth >= 10 {

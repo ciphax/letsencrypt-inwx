@@ -101,6 +101,10 @@ impl RpcRequest {
     pub fn send(self, url: &str, cookies: &mut CookieJar) -> Result<RpcResponse, RpcError> {
         let client = Client::new();
 
+        if let Ok(body) = std::str::from_utf8(&self.body) {
+            trace!("Sending request {}", body);
+        }
+
         let mut request = client
             .post(url)
             .body(self.body);
@@ -129,6 +133,8 @@ impl RpcResponse {
     fn new(mut response: Response, method: String, cookies: &mut CookieJar) -> Result<RpcResponse, RpcError> {
         if response.status() == StatusCode::OK {
             if let Ok(ref response_text) = response.text() {
+                trace!("Received response {:?}", response_text);
+
                 if let Ok(package) = parser::parse(response_text) {
                     let mut success = false;
 

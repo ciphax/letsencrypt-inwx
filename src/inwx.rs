@@ -58,6 +58,8 @@ impl<'a> Inwx<'a> {
             }
         ]);
 
+        debug!("Logging into account {}", self.account.username);
+
         self.send_request(request)?;
 
         Ok(())
@@ -75,10 +77,12 @@ impl<'a> Inwx<'a> {
     }
 
     fn split_domain(&mut self, domain: &str) -> Result<(String, String), InwxError> {
+        debug!("Splitting domain {}", domain);
         let page_size = 20;
         let mut page = 1;
 
         loop {
+            debug!("Requesting page {} of nameserver.list", page);
             let request = RpcRequest::new("nameserver.list", &[
                 RpcRequestParameter {
                     name: "pagelimit",
@@ -104,14 +108,20 @@ impl<'a> Inwx<'a> {
                 for node in nodes {
                     if let Some(ref text) = node.text() {
                         let domain_root = text.text();
+                        debug!("Checking domain {}", domain_root);
 
                         if domain.ends_with(&format!(".{}", domain_root)) {
                             let name = &domain[0..domain.len() - domain_root.len() - 1];
+                            debug!("Found domain root {}", domain_root);
 
                             return Ok((domain_root.to_owned(), name.to_owned()));
                         } else if domain == domain_root {
+                            debug!("Found domain root {}", domain_root);
+
                             return Ok((domain_root.to_owned(), "".to_owned()));
                         }
+
+                        debug!("{} is not the domain root of {}", domain_root, domain);
                     }
                 }
             }

@@ -7,34 +7,37 @@ use crate::config::Config;
 use crate::inwx::{Inwx, InwxError};
 use crate::dns::{check_txt_record, lookup_real_domain};
 
-impl From<InwxError> for String {
-    fn from(inwx_error: InwxError) -> String {
-        format!("{}", inwx_error)
-    }
-}
-
-fn execute_api_commands<F>(config: &Config, domain: &str, op: F) -> Result<bool, String> where F: Fn(&mut Inwx) -> Result<(), InwxError> {
+fn execute_api_commands<F>(config: &Config, domain: &str, op: F) -> Result<bool, ()> where F: Fn(&mut Inwx) -> Result<(), InwxError> {
     if config.accounts.len() == 0 {
-        return Err("No accounts configured".to_owned());
+        error!("No accounts configured");
+        return Err(());
     }
 
-    let accounts = match(&config.accounts).into_iter().find(|account|
-        (&account.domains).into_iter().any(|d| domain == d || domain.ends_with(&format!(".{}", d)))
+    let mut filtered_accounts = Vec::new();
+
+    match config.accounts.iter().find(|account|
+        account.domains.iter().any(|d| domain == d || domain.ends_with(&format!(".{}", d)))
     ) {
-        Some(account) => vec!(account.clone()),
-        None => config.accounts.clone()
+        Some(account) => {
+            info!("Using account {}", account.username);
+            filtered_accounts.push(account);
+        },
+        None => {
+            warn!("Domain not configured: Trying {} configured domains", config.accounts.len());
+            filtered_accounts.extend(config.accounts.iter());
+        }
     };
 
 
-    for account in accounts {
+    for account in filtered_accounts {
         let mut success = false;
-        let mut api = Inwx::new(&account)?;
+        let mut api = Inwx::new(&account).map_err(|e| error!("{}", e))?;
 
-        let mut err = None;
         match op(&mut api) {
             Err(InwxError::DomainNotFound) => {},
             Err(e) => {
-                err = Some(e);
+                error!("{}", e);
+                return Err(());
             },
             _ => {
                 success = true;
@@ -42,39 +45,36 @@ fn execute_api_commands<F>(config: &Config, domain: &str, op: F) -> Result<bool,
         }
 
         if let Err(e) = api.logout() {
-            if let None = err {
-                err = Some(e);
-            }
+            error!("{}", e);
         }
 
-        if let Some(e) = err {
-            return Err(String::from(e));
-        } else if success {
+        if success {
             return Ok(account.ote);
         }
     }
 
-    Err(String::from(InwxError::DomainNotFound))
+    error!("{}", InwxError::DomainNotFound);
+    Err(())
 }
 
-fn read_config(path: &str) -> Result<Config, String> {
-    let file = File::open(path).map_err(|e| format!("Failed to open config file: {}", e))?;
+fn read_config(path: &str) -> Result<Config, ()> {
+    let file = File::open(path).map_err(|e| error!("Failed to open config file: {}", e))?;
     let reader = BufReader::new(file);
-    Ok(serde_json::from_reader(reader).map_err(|e| format!("Failed to parse config file: {}", e))?)
+    Ok(serde_json::from_reader(reader).map_err(|e| error!("Failed to parse config file: {}", e))?)
 }
 
-fn create(config: &Config, domain: &str, value: &str) -> Result<(), String> {
-    println!("Creating TXT record...");
+fn create(config: &Config, domain: &str, value: &str) -> Result<(), ()> {
+    info!("Creating TXT record...");
 
     let is_ote = execute_api_commands(&config, &domain, |api| {
         api.create_txt_record(&domain, &value)?;
         Ok(())
     })?;
 
-    println!("=> done!");
+    info!("=> done!");
 
     if !is_ote && !config.options.no_dns_check {
-        println!("Waiting for the dns record to be publicly visible...");
+        info!("Waiting for the dns record to be publicly visible...");
 
         let start = Instant::now();
         let mut wait_secs = 5;
@@ -82,7 +82,8 @@ fn create(config: &Config, domain: &str, value: &str) -> Result<(), String> {
         loop {
             // timeout after 10 minutes
             if start.elapsed() > Duration::from_secs(60 * 10) {
-                return Err("timeout!".to_owned());
+                error!("=> timeout!");
+                return Err(());
             }
 
             if check_txt_record(&config.options.dns_server, &domain, value) {
@@ -94,34 +95,34 @@ fn create(config: &Config, domain: &str, value: &str) -> Result<(), String> {
             sleep(Duration::from_secs(wait_secs));
         }
 
-        println!("=> done!");
+        info!("=> done!");
     }
 
     if config.options.wait_interval > 0 {
-        println!("Waiting {} additional seconds...", &config.options.wait_interval);
+        info!("Waiting {} additional seconds...", &config.options.wait_interval);
 
         sleep(Duration::from_secs(config.options.wait_interval));
 
-        println!("=> done!");
+        info!("=> done!");
     }
 
     Ok(())
 }
 
-fn delete(config: &Config, domain: &str) -> Result<(), String> {
-    println!("Deleting TXT record...");
+fn delete(config: &Config, domain: &str) -> Result<(), ()> {
+    info!("Deleting TXT record...");
 
     execute_api_commands(&config, &domain, |api| {
         api.delete_txt_record(&domain)?;
         Ok(())
     })?;
 
-    println!("=> done!");
+    info!("=> done!");
 
     Ok(())
 }
 
-pub fn run() -> Result<(), String> {
+pub fn run() -> Result<(), ()> {
     let mut app = App::new("letsencrypt-inwx")
         .version("2.0.0")
         .about("A small cli utility for automating the letsencrypt dns-01 challenge for domains hosted by inwx")
