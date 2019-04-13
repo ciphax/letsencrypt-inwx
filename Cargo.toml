@@ -1,6 +1,6 @@
 [package]
 name = "letsencrypt-inwx"
-version = "2.0.0"
+version = "2.0.1"
 description = "A small cli utility for automating the letsencrypt dns-01 challenge for domains hosted by inwx"
 authors = ["Matthias Herzog"]
 readme = "README.md"
