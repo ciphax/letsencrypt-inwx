@@ -30,7 +30,7 @@ where
         }
         None => {
             warn!(
-                "Domain not configured: Trying {} configured domains",
+                "Domain not configured: Trying {} configured accounts",
                 config.accounts.len()
             );
             filtered_accounts.extend(config.accounts.iter());
