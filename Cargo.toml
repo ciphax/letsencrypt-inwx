@@ -19,13 +19,13 @@ assets = [
 
 [dependencies]
 sxd-xpath = "0.4.2"
-sxd-document = "0.3.0"
-reqwest = "0.9.10"
-trust-dns = "0.15.1"
-clap = "2.32.0"
+sxd-document = "0.3.2"
+reqwest = "0.9.21"
+trust-dns = "0.17.0"
+clap = "2.33.0"
 openssl-probe = "0.1.2"
-serde = { version = "1.0", features = ["derive"] }
-serde_json = "1.0"
-cookie = { version = "0.11.0", features = ["percent-encode"] }
-env_logger = "0.6.1"
-log = "0.4.6"
+serde = { version = "1.0.101", features = ["derive"] }
+serde_json = "1.0.41"
+cookie = { version = "0.12.0", features = ["percent-encode"] }
+env_logger = "0.7.0"
+log = "0.4.8"
