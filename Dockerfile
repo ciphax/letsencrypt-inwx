@@ -3,7 +3,7 @@ COPY . .
 RUN cargo install cargo-deb
 RUN cargo deb --target x86_64-unknown-linux-musl
 
-FROM certbot/certbot:rolling
+FROM certbot/certbot:latest
 VOLUME /etc/letsencrypt
 COPY --from=builder /home/rust/src/target/x86_64-unknown-linux-musl/release/letsencrypt-inwx /usr/bin/
 COPY etc/* /usr/lib/letsencrypt-inwx/
