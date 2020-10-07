@@ -96,3 +96,15 @@ workflows:
               only: /^[0-9]+\.[0-9]+\.[0-9]+$/
             branches:
               ignore: /.*/
+  rebuild-docker-image:
+    triggers:
+      - schedule:
+          cron: "0 2 * * 1"
+          filters:
+            branches:
+              only: latest
+    jobs:
+      - build
+      - publish-docker-image:
+          requires:
+            - build
